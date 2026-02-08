@@ -95,7 +95,7 @@ pub fn install_busybox(
 pub fn create_base_rootfs() -> anyhow::Result<CpioRootfsState> {
     let mut state = CpioRootfsState::new();
 
-    ["bin", "etc", "proc", "syc", "dev", "tmp"]
+    ["bin", "boot", "etc", "proc", "syc", "dev", "tmp"]
         .iter()
         .for_each(|dir| {
             state.new_directory(dir).unwrap();

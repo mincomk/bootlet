@@ -45,7 +45,6 @@ fn main() -> anyhow::Result<()> {
             })
             .collect::<anyhow::Result<Vec<(String, Vec<u8>)>>>()?,
     };
-    let rootfs_image = steps::create_rootfs(rootfs_step_config)?;
 
     let partition_step_config = steps::PartitionStepConfig {
         systemd_boot_binary: &loader::load_file_source(
@@ -56,13 +55,12 @@ fn main() -> anyhow::Result<()> {
             &config.linux_kernel,
             constant::BZIMAGE_DOWNLOAD_URL,
         )?,
-        rootfs_image: &rootfs_image,
         loader_conf: loader::load_loader_config(),
         bootlet_conf: loader::load_bootlet_config(&config.extra_kernel_cmdline.unwrap_or_default()),
         partition_size_mb: config.rootfs_size_mb,
     };
 
-    let partition_image = steps::setup_partition(partition_step_config)?;
+    let partition_image = steps::run_steps(partition_step_config, rootfs_step_config)?;
 
     std::fs::write(&output_path, partition_image)?;
 

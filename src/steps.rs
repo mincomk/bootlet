@@ -13,17 +13,19 @@ pub struct RootfsStepConfig<'a> {
 pub struct PartitionStepConfig<'a> {
     pub systemd_boot_binary: &'a [u8],
     pub bz_image_binary: &'a [u8],
-    pub rootfs_image: &'a [u8],
     pub loader_conf: String,
     pub bootlet_conf: String,
     pub partition_size_mb: u16,
 }
 
-pub fn create_rootfs(config: RootfsStepConfig) -> anyhow::Result<Vec<u8>> {
+fn create_rootfs(config: RootfsStepConfig, boot_uuid: String) -> anyhow::Result<Vec<u8>> {
     let mut state = rootfs::create_base_rootfs()?;
 
     rootfs::install_busybox(&mut state, config.busybox_binary, config.busybox_commands)?;
-    rootfs::install_init_script(&mut state, &config.init_script)?;
+    rootfs::install_init_script(
+        &mut state,
+        &config.init_script.replace("{{ BOOT_UUID }}", &boot_uuid),
+    )?;
 
     for (target_path, file_content) in config.extra_bin_files {
         rootfs::install_extra_bin_file(&mut state, &target_path, &file_content)?;
@@ -34,7 +36,10 @@ pub fn create_rootfs(config: RootfsStepConfig) -> anyhow::Result<Vec<u8>> {
     Ok(rootfs_image)
 }
 
-pub fn setup_partition(config: PartitionStepConfig) -> anyhow::Result<Vec<u8>> {
+pub fn run_steps(
+    config: PartitionStepConfig,
+    rootfs_config: RootfsStepConfig,
+) -> anyhow::Result<Vec<u8>> {
     let mut partition_image = partition::create_partition_image(config.partition_size_mb)?;
 
     {
@@ -50,8 +55,15 @@ pub fn setup_partition(config: PartitionStepConfig) -> anyhow::Result<Vec<u8>> {
 
         partition::copy_file(&root_dir, config.bz_image_binary, "bzImage")?;
 
-        partition::copy_file(&root_dir, config.rootfs_image, "initrd.img")?;
+        let rootfs_image = create_rootfs(rootfs_config, make_uuid(fs.volume_id()))?;
+
+        partition::copy_file(&root_dir, &rootfs_image, "initrd.img")?;
     }
 
     Ok(partition_image)
+}
+
+fn make_uuid(volume_id: u32) -> String {
+    let hex = format!("{:08X}", volume_id);
+    format!("{}-{}", &hex[0..4], &hex[4..8])
 }
