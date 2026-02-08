@@ -46,7 +46,7 @@ pub fn load_file_source(source: &FileSourceConfig, url: &str) -> anyhow::Result<
 
             Ok(downloaded_data)
         }
-        FileSourceConfig::Path(path) => {
+        FileSourceConfig::Path { path } => {
             let data = std::fs::read(path)?;
             Ok(data)
         }
