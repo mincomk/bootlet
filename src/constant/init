@@ -1,15 +1,23 @@
 #!/bin/sh
 
-mdev -s
+clear
 
+mount -t devtmpfs devtmpfs /dev
 mount -t proc proc /proc
 mount -t sysfs sysfs /sys
-mount -t devtmpfs devtmpfs /dev
+
+mdev -s
+
+COUNT=0
+until blkid | grep -q "UUID=\"{{ BOOT_UUID }}\"" || [ $COUNT -eq 5 ]; do
+    echo "Waiting for {{ BOOT_UUID }}... ($COUNT)"
+    sleep 1
+    COUNT=$((COUNT + 1))
+done
+
 mount -t tmpfs -o size=256M tmpfs /tmp
 mount -t efivarfs efivarfs /sys/firmware/efi/efivars
 mount UUID={{ BOOT_UUID }} /boot -o rw
-
-clear
 
 {{ EXTRA_INIT }}
 
