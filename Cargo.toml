@@ -1,6 +1,9 @@
 [package]
 name = "bootlet"
-version = "0.1.0"
+description = "Lightweight Linux shell that boots before your OS "
+license = "MIT"
+authors = ["mincomk <mail@drchi.co.kr>"]
+version = "0.1.1"
 edition = "2024"
 
 [dependencies]
