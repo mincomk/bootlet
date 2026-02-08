@@ -13,3 +13,5 @@ clear
 
 echo 'Welcome to Bootlet!'
 exec setsid cttyhack sh
+
+poweroff -f
